@@ -38,24 +38,30 @@ func (u *UserService) CreateUser(user *model.User) (bool, error) {
 	return created, nil
 }
 
-func (u *UserService) Login(payload *model.User) (*model.User, error) {
+func (u *UserService) Login(payload *model.User) (string, *model.User, error) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), ctxTime)
 	defer cancel()
-	
+
 	user, err := u.repo.UserRepository.GetUserByEmail(ctx, payload.Email)
 
 	if err != nil {
-		return nil, err
+		return "", nil, err
 	}
 
 	checkPassword := pkg.CheckPasswordHash(payload.Password, user.Password)
 
 	if !checkPassword {
-		return nil, err
+		return "", nil, err
 	}
 
-	return user, nil
+	token, err := pkg.CreateJWTToken(user)
+
+	if err != nil {
+		return "", nil, err
+	}
+
+	return token, user, nil
 }
 
 func (u *UserService) GetUserByEmail(email string) (*model.User, error) {

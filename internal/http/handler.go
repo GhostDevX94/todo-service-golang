@@ -232,13 +232,13 @@ func (h *Handler) LoginUser(c *gin.Context) {
 		Password: request.Password,
 	}
 
-	user, err := h.Services.UserService.Login(payload)
+	token, user, err := h.Services.UserService.Login(payload)
 
 	if err != nil {
-		pkg.ErrorResponse(c, err, http.StatusBadRequest)
+		pkg.ErrorResponse(c, err, http.StatusNotFound)
 		return
 	}
 
-	pkg.CreatedResponse(c, user)
+	pkg.TokenResponse(c, user, token)
 
 }
