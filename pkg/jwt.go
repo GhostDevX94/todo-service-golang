@@ -21,3 +21,18 @@ func CreateJWTToken(model *model.User) (string, error) {
 
 	return tokenString, nil
 }
+
+func ValidateJWTToken(tokenString string) (jwt.MapClaims, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+	if err != nil {
+		return nil, err
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok {
+		return claims, nil
+	} else {
+		return nil, err
+	}
+}

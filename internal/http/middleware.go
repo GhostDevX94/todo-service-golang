@@ -1,7 +1,10 @@
 package http
 
 import (
+	"bytes"
+	"errors"
 	"github.com/gin-gonic/gin"
+	"todo-list/pkg"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -20,3 +23,29 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
+func AuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		token := c.GetHeader("Authorization")
+
+		if token == "" {
+			pkg.ErrorResponse(c, errors.New("unauthorized"), 401)
+			c.Abort()
+			return
+		}
+
+		BearerSlice := bytes.Split([]byte(token), []byte(" "))
+		Token := string(BearerSlice[1])
+
+		jwtToken, err := pkg.ValidateJWTToken(Token)
+		if err != nil {
+			pkg.ErrorResponse(c, errors.New("unauthorized"), 401)
+			c.Abort()
+			return
+		}
+
+		c.Set("uid", jwtToken["uid"])
+
+		c.Next()
+	}
+}

@@ -36,12 +36,14 @@ func (r *Route) RouteRun() {
 	router.POST("/login", r.Handler.LoginUser)
 
 	todos := router.Group("todos")
+	todos.Use(AuthMiddleware())
 	todos.GET("/", r.Handler.ListTodos)
 	todos.POST("/create", r.Handler.CreateTodo)
 	todos.PUT("/:id", r.Handler.UpdateTodo)
 	todos.DELETE("/:id", r.Handler.DeleteTodo)
 
 	task := router.Group("task")
+	todos.Use(AuthMiddleware())
 	task.PUT("/:todoId/:taskId", r.Handler.UpdateStatusTask)
 	task.POST("/:id", r.Handler.CreateTask)
 
