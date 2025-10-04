@@ -1,6 +1,11 @@
 package service
 
-import "todo-list/internal/repository"
+import (
+	"time"
+	"todo-list/internal/repository"
+)
+
+var ctxTime = 10 * time.Second
 
 type Services struct {
 	UserService *UserService

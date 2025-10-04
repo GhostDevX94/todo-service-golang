@@ -2,10 +2,13 @@ package http
 
 import (
 	"context"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"todo-list/internal/dto"
+	"todo-list/internal/model"
 	"todo-list/internal/service"
+	"todo-list/pkg"
 )
 
 var ctx = context.Background()
@@ -28,17 +31,13 @@ func (h *Handler) CreateTodo(c *gin.Context) {
 	err := c.Bind(&createRequest)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 	}
 
 	todo, err := h.Services.TodoService.CreateTodo(ctx, createRequest)
 
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(),
-		})
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 	}
 
 	c.JSON(http.StatusCreated, todo)
@@ -52,24 +51,24 @@ func (h *Handler) UpdateTodo(c *gin.Context) {
 	var params UpdateTodoParams
 
 	if err := c.ShouldBindUri(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
 	var data dto.UpdateTodoRequest
 
 	if err := c.Bind(&data); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
 	todo, err := h.Services.TodoService.UpdateTodo(ctx, data, params.ID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
-	c.JSON(http.StatusOK, todo)
+	pkg.SuccessResponse(c, todo)
 }
 
 type DeleteTodoParams struct {
@@ -80,13 +79,13 @@ func (h *Handler) DeleteTodo(c *gin.Context) {
 	var params DeleteTodoParams
 
 	if err := c.ShouldBindUri(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
 	deleted, err := h.Services.TodoService.DeleteTodo(ctx, params.ID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
@@ -98,9 +97,7 @@ func (h *Handler) DeleteTodo(c *gin.Context) {
 func (h *Handler) ListTodos(c *gin.Context) {
 	todos, err := h.Services.TodoService.ListTodos(ctx)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
 		return
 	}
 
@@ -118,22 +115,18 @@ func (h *Handler) CreateTask(c *gin.Context) {
 	var params CreateTaskParams
 
 	if err := c.ShouldBindUri(&params); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
 	todo, err := h.Services.TodoService.GetTodoById(ctx, params.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
 		return
 	}
 
 	if todo == nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Not found",
-		})
+		pkg.ErrorResponse(c, errors.New("not found"), http.StatusNotFound)
 		return
 	}
 
@@ -141,7 +134,7 @@ func (h *Handler) CreateTask(c *gin.Context) {
 
 	_, err = h.Services.TaskService.CreateTask(ctx, data, params.ID)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
@@ -162,39 +155,90 @@ func (h *Handler) UpdateStatusTask(c *gin.Context) {
 
 	err := c.Bind(&data)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
 		return
 	}
 	var params UpdateStatusTaskParams
 
 	err = c.ShouldBindUri(&params)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
 		return
 	}
 
 	_, err = h.Services.TodoService.GetTodoById(ctx, params.TodoId)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "Not found",
-		})
+		pkg.ErrorResponse(c, errors.New("not found"), http.StatusNotFound)
 		return
 	}
 
 	updated, err := h.Services.TaskService.UpdateStatusTask(ctx, data, params.TodoId, params.TaskID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": err.Error(),
-		})
+		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"status": updated,
 	})
+
+}
+
+func (h *Handler) RegisterUser(c *gin.Context) {
+
+	var request dto.RegisterUser
+
+	err := c.Bind(&request)
+
+	if err != nil {
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
+		return
+	}
+
+	user := &model.User{
+		Name:     request.Name,
+		Email:    request.Email,
+		Password: request.Password,
+	}
+
+	created, err := h.Services.UserService.CreateUser(user)
+
+	if err != nil {
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
+		return
+	}
+
+	if created == false {
+		pkg.ErrorResponse(c, errors.New("user already exists"), http.StatusBadRequest)
+		return
+	}
+
+	pkg.CreatedResponse(c, "User created")
+
+}
+
+func (h *Handler) LoginUser(c *gin.Context) {
+	var request dto.LoginUser
+
+	err := c.Bind(&request)
+
+	if err != nil {
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
+		return
+	}
+
+	payload := &model.User{
+		Email:    request.Email,
+		Password: request.Password,
+	}
+
+	user, err := h.Services.UserService.Login(payload)
+
+	if err != nil {
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
+		return
+	}
+
+	pkg.CreatedResponse(c, user)
 
 }

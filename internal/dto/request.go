@@ -15,3 +15,14 @@ type CreateTaskTodoRequest struct {
 type UpdateStatusTaskTodoRequest struct {
 	Status bool `json:"status"`
 }
+
+type RegisterUser struct {
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type LoginUser struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}

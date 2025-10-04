@@ -32,6 +32,9 @@ func (r *Route) RouteRun() {
 		port = "8080"
 	}
 
+	router.POST("/register", r.Handler.RegisterUser)
+	router.POST("/login", r.Handler.LoginUser)
+
 	todos := router.Group("todos")
 	todos.GET("/", r.Handler.ListTodos)
 	todos.POST("/create", r.Handler.CreateTodo)
