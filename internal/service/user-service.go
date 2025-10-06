@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"todo-list/internal/model"
 	"todo-list/internal/repository"
 	"todo-list/pkg"
@@ -17,11 +18,8 @@ func NewUserService(repo *repository.Repository) *UserService {
 	}
 }
 
-func (u *UserService) CreateUser(user *model.User) (bool, error) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), ctxTime)
-	defer cancel()
-
+func (u *UserService) CreateUser(ctx context.Context, user *model.User) (bool, error) {
+	
 	password, err := pkg.HashPassword(user.Password)
 
 	if err != nil {
@@ -38,21 +36,17 @@ func (u *UserService) CreateUser(user *model.User) (bool, error) {
 	return created, nil
 }
 
-func (u *UserService) Login(payload *model.User) (string, *model.User, error) {
-
-	ctx, cancel := context.WithTimeout(context.Background(), ctxTime)
-	defer cancel()
-
+func (u *UserService) Login(ctx context.Context, payload *model.User) (string, *model.User, error) {
 	user, err := u.repo.UserRepository.GetUserByEmail(ctx, payload.Email)
 
 	if err != nil {
-		return "", nil, err
+		return "", nil, errors.New("invalid credentials")
 	}
 
 	checkPassword := pkg.CheckPasswordHash(payload.Password, user.Password)
 
 	if !checkPassword {
-		return "", nil, err
+		return "", nil, errors.New("invalid credentials")
 	}
 
 	token, err := pkg.CreateJWTToken(user)
@@ -64,10 +58,7 @@ func (u *UserService) Login(payload *model.User) (string, *model.User, error) {
 	return token, user, nil
 }
 
-func (u *UserService) GetUserByEmail(email string) (*model.User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), ctxTime)
-	defer cancel()
-
+func (u *UserService) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	User, err := u.repo.UserRepository.GetUserByEmail(ctx, email)
 
 	if err != nil {

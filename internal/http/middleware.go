@@ -1,10 +1,11 @@
 package http
 
 import (
-	"bytes"
 	"errors"
-	"github.com/gin-gonic/gin"
+	"strings"
 	"todo-list/pkg"
+
+	"github.com/gin-gonic/gin"
 )
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -26,26 +27,28 @@ func CORSMiddleware() gin.HandlerFunc {
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		token := c.GetHeader("Authorization")
-
-		if token == "" {
+		auth := c.GetHeader("Authorization")
+		if !strings.HasPrefix(auth, "Bearer ") {
 			pkg.ErrorResponse(c, errors.New("unauthorized"), 401)
 			c.Abort()
 			return
 		}
-
-		BearerSlice := bytes.Split([]byte(token), []byte(" "))
-		Token := string(BearerSlice[1])
-
-		jwtToken, err := pkg.ValidateJWTToken(Token)
+		token := strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
+		jwtToken, err := pkg.ValidateJWTToken(token)
 		if err != nil {
 			pkg.ErrorResponse(c, errors.New("unauthorized"), 401)
 			c.Abort()
 			return
 		}
 
-		c.Set("uid", jwtToken["uid"])
-
+		// MapClaims numeric values decode to float64; cast once and convert
+		uidF, ok := jwtToken["uid"].(float64)
+		if !ok {
+			pkg.ErrorResponse(c, errors.New("unauthorized"), 401)
+			c.Abort()
+			return
+		}
+		c.Set("uid", uint(uidF))
 		c.Next()
 	}
 }

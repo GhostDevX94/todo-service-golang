@@ -22,12 +22,14 @@ func (r *UserRepository) GetUserById(ctx context.Context, id uint) (*model.User,
 
 func (r *UserRepository) CreateUser(ctx context.Context, data *model.User) (bool, error) {
 
-	// Using RETURNING requires Scan to actually execute the statement
-	err := r.db.QueryRowContext(
-		ctx,
-		"INSERT INTO users (name,email,password) VALUES ($1,$2,$3) RETURNING id,name,email,password",
-		data.Name, data.Email, data.Password,
-	).Scan(&data.ID, &data.Name, &data.Email, &data.Password)
+	row := r.db.QueryRowContext(ctx, "INSERT INTO users (name,email,password) VALUES ($1,$2,$3) RETURNING id,name,email,password", data.Name, data.Email, data.Password)
+
+	err := row.Scan(
+		&data.ID,
+		&data.Name,
+		&data.Email,
+		&data.Password,
+	)
 
 	if err != nil {
 		return false, err

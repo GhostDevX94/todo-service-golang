@@ -5,16 +5,15 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
-	"todo-list/internal/dto"
 	"todo-list/internal/model"
 )
 
 type TodoRepositoryI interface {
-	CreateTodo(context.Context, dto.CreateTodoRequest) (*model.Todo, error)
+	CreateTodo(context.Context, *model.Todo) (*model.Todo, error)
 	GetTodoById(context.Context, uint) (*model.Todo, error)
-	UpdateTodo(context.Context, dto.UpdateTodoRequest, uint) (*model.Todo, error)
-	DeleteTodo(context.Context, uint) (bool, error)
-	ListTodos(context.Context) ([]*model.Todo, error)
+	UpdateTodo(context.Context, *model.Todo) (*model.Todo, error)
+	DeleteTodo(context.Context, uint, uint) (bool, error)
+	ListTodos(context.Context, uint) ([]*model.Todo, error)
 }
 
 type TodoRepository struct {
@@ -41,9 +40,9 @@ func (r *TodoRepository) GetTodoById(ctx context.Context, id uint) (*model.Todo,
 	return &todo, nil
 }
 
-func (r *TodoRepository) CreateTodo(ctx context.Context, request dto.CreateTodoRequest) (*model.Todo, error) {
+func (r *TodoRepository) CreateTodo(ctx context.Context, payload *model.Todo) (*model.Todo, error) {
 	var todo model.Todo
-	query := r.db.QueryRowContext(ctx, "INSERT INTO todos (name,user_id,date) VALUES ($1,$2,$3) RETURNING id,name,user_id,date", request.Name, 1, time.Now())
+	query := r.db.QueryRowContext(ctx, "INSERT INTO todos (name,user_id,date) VALUES ($1,$2,$3) RETURNING id,name,user_id,date", payload.Name, payload.UserID, time.Now())
 
 	err := query.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date)
 	if err != nil {
@@ -53,9 +52,9 @@ func (r *TodoRepository) CreateTodo(ctx context.Context, request dto.CreateTodoR
 	return &todo, nil
 }
 
-func (r *TodoRepository) UpdateTodo(ctx context.Context, request dto.UpdateTodoRequest, id uint) (*model.Todo, error) {
+func (r *TodoRepository) UpdateTodo(ctx context.Context, payload *model.Todo) (*model.Todo, error) {
 	var todo model.Todo
-	query := r.db.QueryRowContext(ctx, "UPDATE todos SET name = $1  WHERE id = $2 RETURNING id,name,user_id,date", request.Name, id)
+	query := r.db.QueryRowContext(ctx, "UPDATE todos SET name = $1  WHERE user_id = $2 AND id = $3 RETURNING id,name,user_id,date", payload.Name, payload.UserID, payload.ID)
 
 	err := query.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date)
 	if err != nil {
@@ -65,8 +64,8 @@ func (r *TodoRepository) UpdateTodo(ctx context.Context, request dto.UpdateTodoR
 	return &todo, nil
 }
 
-func (r *TodoRepository) DeleteTodo(ctx context.Context, id uint) (bool, error) {
-	result, err := r.db.ExecContext(ctx, "DELETE FROM todos WHERE id = $1", id)
+func (r *TodoRepository) DeleteTodo(ctx context.Context, id uint, UserId uint) (bool, error) {
+	result, err := r.db.ExecContext(ctx, "DELETE FROM todos WHERE id = $1 AND user_id = $2", id, UserId)
 	if err != nil {
 		return false, fmt.Errorf("failed to delete todo: %w", err)
 	}
@@ -79,8 +78,8 @@ func (r *TodoRepository) DeleteTodo(ctx context.Context, id uint) (bool, error) 
 	return rowsAffected > 0, nil
 }
 
-func (r *TodoRepository) ListTodos(ctx context.Context) ([]*model.Todo, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id, name, user_id, date FROM todos ORDER BY created_at DESC")
+func (r *TodoRepository) ListTodos(ctx context.Context, userId uint) ([]*model.Todo, error) {
+	rows, err := r.db.QueryContext(ctx, "SELECT id, name, user_id, date FROM todos  WHERE user_id = $1 ORDER BY created_at DESC", userId)
 	if err != nil {
 		return nil, err
 	}

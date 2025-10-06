@@ -32,6 +32,8 @@ func (r *Route) RouteRun() {
 		port = "8080"
 	}
 
+	//router.Use(CORSMiddleware())
+
 	router.POST("/register", r.Handler.RegisterUser)
 	router.POST("/login", r.Handler.LoginUser)
 
@@ -43,7 +45,7 @@ func (r *Route) RouteRun() {
 	todos.DELETE("/:id", r.Handler.DeleteTodo)
 
 	task := router.Group("task")
-	todos.Use(AuthMiddleware())
+	task.Use(AuthMiddleware())
 	task.PUT("/:todoId/:taskId", r.Handler.UpdateStatusTask)
 	task.POST("/:id", r.Handler.CreateTask)
 

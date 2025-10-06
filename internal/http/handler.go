@@ -1,24 +1,21 @@
 package http
 
 import (
-	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"todo-list/internal/dto"
 	"todo-list/internal/model"
 	"todo-list/internal/service"
 	"todo-list/pkg"
-)
 
-var ctx = context.Background()
+	"github.com/gin-gonic/gin"
+)
 
 type Handler struct {
 	Services *service.Services
 }
 
 func newHandler() *Handler {
-	context.WithTimeout(ctx, 1000000)
 	return &Handler{
 		Services: service.NewServices(),
 	}
@@ -32,12 +29,16 @@ func (h *Handler) CreateTodo(c *gin.Context) {
 
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
+		return
 	}
+	ctx := c.Request.Context()
+	createRequest.UserID = c.GetUint("uid")
 
 	todo, err := h.Services.TodoService.CreateTodo(ctx, createRequest)
 
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
+		return
 	}
 
 	c.JSON(http.StatusCreated, todo)
@@ -62,6 +63,9 @@ func (h *Handler) UpdateTodo(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
+	data.UserID = c.GetUint("uid")
+
 	todo, err := h.Services.TodoService.UpdateTodo(ctx, data, params.ID)
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
@@ -82,8 +86,8 @@ func (h *Handler) DeleteTodo(c *gin.Context) {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
-
-	deleted, err := h.Services.TodoService.DeleteTodo(ctx, params.ID)
+	ctx := c.Request.Context()
+	deleted, err := h.Services.TodoService.DeleteTodo(ctx, params.ID, c.GetUint("uid"))
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
@@ -95,7 +99,8 @@ func (h *Handler) DeleteTodo(c *gin.Context) {
 }
 
 func (h *Handler) ListTodos(c *gin.Context) {
-	todos, err := h.Services.TodoService.ListTodos(ctx)
+	ctx := c.Request.Context()
+	todos, err := h.Services.TodoService.ListTodos(ctx, c.GetUint("uid"))
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
 		return
@@ -118,7 +123,7 @@ func (h *Handler) CreateTask(c *gin.Context) {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
-
+	ctx := c.Request.Context()
 	todo, err := h.Services.TodoService.GetTodoById(ctx, params.ID)
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
@@ -131,6 +136,13 @@ func (h *Handler) CreateTask(c *gin.Context) {
 	}
 
 	var data dto.CreateTaskTodoRequest
+
+	err = c.Bind(&data)
+
+	if err != nil {
+		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
+		return
+	}
 
 	_, err = h.Services.TaskService.CreateTask(ctx, data, params.ID)
 	if err != nil {
@@ -165,7 +177,7 @@ func (h *Handler) UpdateStatusTask(c *gin.Context) {
 		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
 		return
 	}
-
+	ctx := c.Request.Context()
 	_, err = h.Services.TodoService.GetTodoById(ctx, params.TodoId)
 	if err != nil {
 		pkg.ErrorResponse(c, errors.New("not found"), http.StatusNotFound)
@@ -187,7 +199,6 @@ func (h *Handler) UpdateStatusTask(c *gin.Context) {
 func (h *Handler) RegisterUser(c *gin.Context) {
 
 	var request dto.RegisterUser
-
 	err := c.Bind(&request)
 
 	if err != nil {
@@ -200,15 +211,15 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		Email:    request.Email,
 		Password: request.Password,
 	}
-
-	created, err := h.Services.UserService.CreateUser(user)
+	ctx := c.Request.Context()
+	created, err := h.Services.UserService.CreateUser(ctx, user)
 
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
-	if created == false {
+	if !created {
 		pkg.ErrorResponse(c, errors.New("user already exists"), http.StatusBadRequest)
 		return
 	}
@@ -221,7 +232,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 	var request dto.LoginUser
 
 	err := c.Bind(&request)
-
+	ctx := c.Request.Context()
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
@@ -232,7 +243,7 @@ func (h *Handler) LoginUser(c *gin.Context) {
 		Password: request.Password,
 	}
 
-	token, user, err := h.Services.UserService.Login(payload)
+	token, user, err := h.Services.UserService.Login(ctx, payload)
 
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusNotFound)

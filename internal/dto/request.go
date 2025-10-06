@@ -1,11 +1,13 @@
 package dto
 
 type CreateTodoRequest struct {
-	Name string `json:"name" binding:"required,min=1,max=255"`
+	Name   string `json:"name" binding:"required,min=1,max=255"`
+	UserID uint   `json:"-"`
 }
 
 type UpdateTodoRequest struct {
-	Name string `json:"name" binding:"required,min=1,max=255"`
+	Name   string `json:"name" binding:"required,min=1,max=255"`
+	UserID uint   `json:"-"`
 }
 
 type CreateTaskTodoRequest struct {
