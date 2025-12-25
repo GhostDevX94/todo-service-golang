@@ -29,9 +29,9 @@ func newTodoRepository(db *sql.DB) *TodoRepository {
 func (r *TodoRepository) GetTodoById(ctx context.Context, id uint) (*model.Todo, error) {
 	var todo model.Todo
 
-	query := r.db.QueryRowContext(ctx, "SELECT id,name,user_id,date FROM todos WHERE id = $1", id)
+	query := r.db.QueryRowContext(ctx, "SELECT id,name,user_id,date,created_at,updated_at FROM todos WHERE id = $1", id)
 
-	err := query.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date)
+	err := query.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date, &todo.CreatedAt, &todo.UpdatedAt)
 
 	if err != nil {
 		return nil, err
@@ -42,9 +42,9 @@ func (r *TodoRepository) GetTodoById(ctx context.Context, id uint) (*model.Todo,
 
 func (r *TodoRepository) CreateTodo(ctx context.Context, payload *model.Todo) (*model.Todo, error) {
 	var todo model.Todo
-	query := r.db.QueryRowContext(ctx, "INSERT INTO todos (name,user_id,date) VALUES ($1,$2,$3) RETURNING id,name,user_id,date", payload.Name, payload.UserID, time.Now())
+	query := r.db.QueryRowContext(ctx, "INSERT INTO todos (name,user_id,date) VALUES ($1,$2,$3) RETURNING id,name,user_id,date,created_at,updated_at", payload.Name, payload.UserID, time.Now())
 
-	err := query.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date)
+	err := query.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date, &todo.CreatedAt, &todo.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -54,9 +54,9 @@ func (r *TodoRepository) CreateTodo(ctx context.Context, payload *model.Todo) (*
 
 func (r *TodoRepository) UpdateTodo(ctx context.Context, payload *model.Todo) (*model.Todo, error) {
 	var todo model.Todo
-	query := r.db.QueryRowContext(ctx, "UPDATE todos SET name = $1  WHERE user_id = $2 AND id = $3 RETURNING id,name,user_id,date", payload.Name, payload.UserID, payload.ID)
+	query := r.db.QueryRowContext(ctx, "UPDATE todos SET name = $1  WHERE user_id = $2 AND id = $3 RETURNING id,name,user_id,date,created_at,updated_at", payload.Name, payload.UserID, payload.ID)
 
-	err := query.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date)
+	err := query.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date, &todo.CreatedAt, &todo.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (r *TodoRepository) DeleteTodo(ctx context.Context, id uint, UserId uint) (
 }
 
 func (r *TodoRepository) ListTodos(ctx context.Context, userId uint) ([]*model.Todo, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id, name, user_id, date FROM todos  WHERE user_id = $1 ORDER BY created_at DESC", userId)
+	rows, err := r.db.QueryContext(ctx, "SELECT id, name, user_id, date, created_at, updated_at FROM todos  WHERE user_id = $1 ORDER BY created_at DESC", userId)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (r *TodoRepository) ListTodos(ctx context.Context, userId uint) ([]*model.T
 	var todos []*model.Todo
 	for rows.Next() {
 		var todo model.Todo
-		err := rows.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date)
+		err := rows.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date, &todo.CreatedAt, &todo.UpdatedAt)
 		if err != nil {
 			return nil, err
 		}

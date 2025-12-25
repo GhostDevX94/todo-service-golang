@@ -48,11 +48,16 @@ migrate-down:
 migrate-steps:
 	@read -p "Enter the number of steps:" STEPS; \
 	if [ -z "$$STEPS" ]; then echo "Steps not specified!"; exit 1; fi; \
-	$(MIGRATE) -database $(DATABASE_URLL) -path $(MIGRATIONS_DIR) up $$STEPS
+	$(MIGRATE) -database $(DATABASE_URL) -path $(MIGRATIONS_DIR) up $$STEPS
 
 migrate-rollback:
 	@read -p "Enter the number of steps to roll back: " STEPS; \
 	if [ -z "$$STEPS" ]; then echo "Steps not specified!"; exit 1; fi; \
 	$(MIGRATE) -database $(DATABASE_URL) -path $(MIGRATIONS_DIR) down $$STEPS
+
+swagger:
+	@echo "Generating Swagger documentation..."
+	@~/go/bin/swag init -g cmd/main.go -o docs
+	@echo "Swagger docs generated successfully!"
 
 

@@ -4,7 +4,11 @@ import (
 	"log"
 	"os"
 
+	_ "todo-list/docs" // Import generated docs
+
 	"github.com/gin-gonic/gin"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type Route struct {
@@ -32,7 +36,10 @@ func (r *Route) RouteRun() {
 		port = "8080"
 	}
 
-	//router.Use(CORSMiddleware())
+	router.Use(CORSMiddleware())
+
+	// Swagger endpoint
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	router.POST("/register", r.Handler.RegisterUser)
 	router.POST("/login", r.Handler.LoginUser)
@@ -48,8 +55,6 @@ func (r *Route) RouteRun() {
 	task.Use(AuthMiddleware())
 	task.PUT("/:todoId/:taskId", r.Handler.UpdateStatusTask)
 	task.POST("/:id", r.Handler.CreateTask)
-
-	log.Printf("Starting server on port %s", ":"+port)
 
 	err := router.Run(":" + port)
 	if err != nil {

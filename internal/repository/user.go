@@ -22,13 +22,15 @@ func (r *UserRepository) GetUserById(ctx context.Context, id uint) (*model.User,
 
 func (r *UserRepository) CreateUser(ctx context.Context, data *model.User) (bool, error) {
 
-	row := r.db.QueryRowContext(ctx, "INSERT INTO users (name,email,password) VALUES ($1,$2,$3) RETURNING id,name,email,password", data.Name, data.Email, data.Password)
+	row := r.db.QueryRowContext(ctx, "INSERT INTO users (name,email,password) VALUES ($1,$2,$3) RETURNING id,name,email,password,created_at,updated_at", data.Name, data.Email, data.Password)
 
 	err := row.Scan(
 		&data.ID,
 		&data.Name,
 		&data.Email,
 		&data.Password,
+		&data.CreatedAt,
+		&data.UpdatedAt,
 	)
 
 	if err != nil {
@@ -42,9 +44,9 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (*mod
 
 	var user model.User
 
-	row := r.db.QueryRowContext(ctx, "SELECT id,name,email,password FROM users WHERE email = $1", email)
+	row := r.db.QueryRowContext(ctx, "SELECT id,name,email,password,created_at,updated_at FROM users WHERE email = $1", email)
 
-	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password)
+	err := row.Scan(&user.ID, &user.Name, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 	if err != nil {
 		return nil, err
 	}

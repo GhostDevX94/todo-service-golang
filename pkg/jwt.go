@@ -1,16 +1,19 @@
 package pkg
 
 import (
-	"github.com/golang-jwt/jwt/v5"
 	"os"
 	"time"
 	"todo-list/internal/model"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 func CreateJWTToken(model *model.User) (string, error) {
+	now := time.Now()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"uid": model.ID,
-		"nbf": time.Date(2015, 10, 10, 12, 0, 0, 0, time.UTC).Unix(),
+		"iat": now.Unix(),
+		"exp": now.Add(24 * time.Hour).Unix(), // Token expires in 24 hours
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
