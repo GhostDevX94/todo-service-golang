@@ -1,10 +1,10 @@
 package http
 
 import (
-	"log"
 	"os"
 
-	_ "todo-list/docs" // Import generated docs
+	_ "todo-list/docs"
+	"todo-list/pkg"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -29,36 +29,52 @@ func (r *Route) RouteRun() {
 	}
 	gin.SetMode(ginMode)
 
-	router := gin.Default()
+	router := gin.New()
 
 	port := os.Getenv("APP_PORT")
 	if port == "" {
 		port = "8080"
 	}
 
+	router.Use(RecoveryMiddleware())
 	router.Use(CORSMiddleware())
+	router.Use(RequestLoggerMiddleware())
 
-	// Swagger endpoint
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	router.POST("/register", r.Handler.RegisterUser)
-	router.POST("/login", r.Handler.LoginUser)
+	authGroup := router.Group("/")
+
+	{
+		authGroup.POST("/register", r.Handler.RegisterUser)
+		authGroup.POST("/login", r.Handler.LoginUser)
+	}
 
 	todos := router.Group("todos")
 	todos.Use(AuthMiddleware())
-	todos.GET("/", r.Handler.ListTodos)
-	todos.POST("/create", r.Handler.CreateTodo)
-	todos.PUT("/:id", r.Handler.UpdateTodo)
-	todos.DELETE("/:id", r.Handler.DeleteTodo)
+	{
+		todos.GET("/", r.Handler.ListTodos)
+		todos.POST("/create", r.Handler.CreateTodo)
+		todos.PUT("/:id", r.Handler.UpdateTodo)
+		todos.DELETE("/:id", r.Handler.DeleteTodo)
+	}
 
 	task := router.Group("task")
 	task.Use(AuthMiddleware())
-	task.PUT("/:todoId/:taskId", r.Handler.UpdateStatusTask)
-	task.POST("/:id", r.Handler.CreateTask)
+	{
+		task.PUT("/:todoId/:taskId", r.Handler.UpdateStatusTask)
+		task.POST("/:id", r.Handler.CreateTask)
+	}
+
+	pkg.Logger.Info().
+		Str("port", port).
+		Str("mode", ginMode).
+		Msg("Starting server")
 
 	err := router.Run(":" + port)
 	if err != nil {
-		log.Fatalf("Error run router: %s", err)
+		pkg.Logger.Fatal().
+			Err(err).
+			Msg("Failed to start server")
 		return
 	}
 }

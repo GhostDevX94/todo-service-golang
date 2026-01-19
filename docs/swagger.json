@@ -392,9 +392,15 @@
     "definitions": {
         "dto.CreateTaskTodoRequest": {
             "type": "object",
+            "required": [
+                "title"
+            ],
             "properties": {
                 "title": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1,
+                    "example": "Complete task 1"
                 }
             }
         },
@@ -407,40 +413,64 @@
                 "name": {
                     "type": "string",
                     "maxLength": 255,
-                    "minLength": 1
+                    "minLength": 1,
+                    "example": "Buy groceries"
                 }
             }
         },
         "dto.LoginUser": {
             "type": "object",
+            "required": [
+                "email",
+                "password"
+            ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@example.com"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 6,
+                    "example": "securePassword123"
                 }
             }
         },
         "dto.RegisterUser": {
             "type": "object",
+            "required": [
+                "email",
+                "name",
+                "password"
+            ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "john@example.com"
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 2,
+                    "example": "John Doe"
                 },
                 "password": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 6,
+                    "example": "securePassword123"
                 }
             }
         },
         "dto.UpdateStatusTaskTodoRequest": {
             "type": "object",
+            "required": [
+                "status"
+            ],
             "properties": {
                 "status": {
-                    "type": "boolean"
+                    "type": "boolean",
+                    "example": true
                 }
             }
         },
@@ -453,7 +483,8 @@
                 "name": {
                     "type": "string",
                     "maxLength": 255,
-                    "minLength": 1
+                    "minLength": 1,
+                    "example": "Updated todo name"
                 }
             }
         },

@@ -3,11 +3,17 @@ definitions:
   dto.CreateTaskTodoRequest:
     properties:
       title:
+        example: Complete task 1
+        maxLength: 255
+        minLength: 1
         type: string
+    required:
+    - title
     type: object
   dto.CreateTodoRequest:
     properties:
       name:
+        example: Buy groceries
         maxLength: 255
         minLength: 1
         type: string
@@ -17,27 +23,48 @@ definitions:
   dto.LoginUser:
     properties:
       email:
+        example: john@example.com
         type: string
       password:
+        example: securePassword123
+        minLength: 6
         type: string
+    required:
+    - email
+    - password
     type: object
   dto.RegisterUser:
     properties:
       email:
+        example: john@example.com
         type: string
       name:
+        example: John Doe
+        maxLength: 100
+        minLength: 2
         type: string
       password:
+        example: securePassword123
+        maxLength: 100
+        minLength: 6
         type: string
+    required:
+    - email
+    - name
+    - password
     type: object
   dto.UpdateStatusTaskTodoRequest:
     properties:
       status:
+        example: true
         type: boolean
+    required:
+    - status
     type: object
   dto.UpdateTodoRequest:
     properties:
       name:
+        example: Updated todo name
         maxLength: 255
         minLength: 1
         type: string

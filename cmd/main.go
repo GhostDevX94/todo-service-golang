@@ -1,8 +1,8 @@
 package main
 
 import (
-	"log"
 	"todo-list/internal/http"
+	"todo-list/pkg"
 
 	"github.com/joho/godotenv"
 )
@@ -28,8 +28,12 @@ import (
 
 func main() {
 
+	pkg.InitLogger()
+
+	pkg.Logger.Info().Msg("Starting Todo List API")
+
 	if err := godotenv.Load(); err != nil {
-		log.Printf("Warning: .env file not found: %v", err)
+		pkg.Logger.Warn().Err(err).Msg(".env file not found, using environment variables")
 	}
 
 	route := http.NewRoute()
