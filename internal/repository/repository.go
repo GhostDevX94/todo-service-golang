@@ -13,7 +13,7 @@ type Repository struct {
 
 func NewRepository() *Repository {
 
-	db, err := pkg.RunDb()
+	db, err := pkg.ConnectDB()
 
 	if err != nil {
 		log.Fatalf("Error database connect: %v", err)

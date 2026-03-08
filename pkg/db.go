@@ -3,12 +3,15 @@ package pkg
 import (
 	"database/sql"
 	"errors"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"fmt"
 	"log"
 	"os"
+	"time"
+
+	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-func RunDb() (*sql.DB, error) {
+func ConnectDB() (*sql.DB, error) {
 
 	url := os.Getenv("DATABASE_URL")
 
@@ -18,10 +21,18 @@ func RunDb() (*sql.DB, error) {
 
 	con, err := sql.Open("pgx", url)
 	if err != nil {
-		return nil, errors.New(err.Error())
+		return nil, fmt.Errorf("failed to open database connection: %w", err)
 	}
 
-	log.Println("Database connected")
+	if err := con.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	con.SetMaxOpenConns(25)
+	con.SetMaxIdleConns(25)
+	con.SetConnMaxLifetime(5 * time.Minute)
+
+	log.Println("Database connected successfully")
 
 	return con, nil
 }
