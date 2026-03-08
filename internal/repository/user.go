@@ -6,6 +6,12 @@ import (
 	"todo-list/internal/model"
 )
 
+type UserRepositoryI interface {
+	GetUserById(context.Context, uint) (*model.User, error)
+	CreateUser(context.Context, *model.User) (bool, error)
+	GetUserByEmail(context.Context, string) (*model.User, error)
+}
+
 type UserRepository struct {
 	db *sql.DB
 }

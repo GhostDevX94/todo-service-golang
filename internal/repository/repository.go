@@ -6,9 +6,9 @@ import (
 )
 
 type Repository struct {
-	UserRepository *UserRepository
-	TodoRepository *TodoRepository
-	TaskRepository *TaskRepository
+	UserRepository UserRepositoryI
+	TodoRepository TodoRepositoryI
+	TaskRepository TaskRepositoryI
 }
 
 func NewRepository() *Repository {

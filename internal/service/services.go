@@ -16,8 +16,8 @@ type Services struct {
 func NewServices() *Services {
 	newRepository := repository.NewRepository()
 	return &Services{
-		UserService: NewUserService(newRepository),
-		TodoService: NewTodoService(newRepository),
-		TaskService: NewTaskService(newRepository),
+		UserService: NewUserService(newRepository.UserRepository),
+		TodoService: NewTodoService(newRepository.TodoRepository),
+		TaskService: NewTaskService(newRepository.TaskRepository),
 	}
 }

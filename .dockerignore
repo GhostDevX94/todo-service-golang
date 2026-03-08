@@ -6,8 +6,9 @@ bin/
 *.so
 *.dylib
 
-# Test binary
+# Test binary and test files
 *.test
+**/*_test.go
 
 # Output of the go coverage tool
 *.out
@@ -52,3 +53,7 @@ ARCHITECTURE.md
 
 # CI/CD
 .github/
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml

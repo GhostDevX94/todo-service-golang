@@ -16,17 +16,17 @@ type TodoServiceI interface {
 }
 
 type TodoService struct {
-	repo *repository.Repository
+	repo repository.TodoRepositoryI
 }
 
-func NewTodoService(repo *repository.Repository) *TodoService {
+func NewTodoService(repo repository.TodoRepositoryI) *TodoService {
 	return &TodoService{
 		repo: repo,
 	}
 }
 
 func (s *TodoService) GetTodoById(ctx context.Context, id uint) (*model.Todo, error) {
-	todo, err := s.repo.TodoRepository.GetTodoById(ctx, id)
+	todo, err := s.repo.GetTodoById(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (s *TodoService) CreateTodo(ctx context.Context, request dto.CreateTodoRequ
 		UserID: request.UserID,
 	}
 
-	todo, err := s.repo.TodoRepository.CreateTodo(ctx, todo)
+	todo, err := s.repo.CreateTodo(ctx, todo)
 
 	if err != nil {
 		return nil, err
@@ -58,7 +58,7 @@ func (s *TodoService) UpdateTodo(ctx context.Context, payload dto.UpdateTodoRequ
 		UserID: payload.UserID,
 	}
 
-	todo, err := s.repo.TodoRepository.UpdateTodo(ctx, payloadTodo)
+	todo, err := s.repo.UpdateTodo(ctx, payloadTodo)
 
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (s *TodoService) UpdateTodo(ctx context.Context, payload dto.UpdateTodoRequ
 }
 
 func (s *TodoService) DeleteTodo(ctx context.Context, id uint, UserId uint) (bool, error) {
-	deleted, err := s.repo.TodoRepository.DeleteTodo(ctx, id, UserId)
+	deleted, err := s.repo.DeleteTodo(ctx, id, UserId)
 
 	if err != nil {
 		return false, err
@@ -78,7 +78,7 @@ func (s *TodoService) DeleteTodo(ctx context.Context, id uint, UserId uint) (boo
 }
 
 func (s *TodoService) ListTodos(ctx context.Context, UserId uint) ([]*model.Todo, error) {
-	todos, err := s.repo.TodoRepository.ListTodos(ctx, UserId)
+	todos, err := s.repo.ListTodos(ctx, UserId)
 	if err != nil {
 		return nil, err
 	}

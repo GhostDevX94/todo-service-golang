@@ -55,10 +55,6 @@ func (h *Handler) CreateTodo(c *gin.Context) {
 	c.JSON(http.StatusCreated, todo)
 }
 
-type UpdateTodoParams struct {
-	ID uint `uri:"id" binding:"required"`
-}
-
 // UpdateTodo godoc
 // @Summary Update a todo
 // @Description Update an existing todo by ID
@@ -96,10 +92,6 @@ func (h *Handler) UpdateTodo(c *gin.Context) {
 	}
 
 	pkg.SuccessResponse(c, todo)
-}
-
-type DeleteTodoParams struct {
-	ID uint `uri:"id" binding:"required"`
 }
 
 // DeleteTodo godoc
@@ -154,10 +146,6 @@ func (h *Handler) ListTodos(c *gin.Context) {
 	})
 }
 
-type CreateTaskParams struct {
-	ID uint `uri:"id" binding:"required"`
-}
-
 // CreateTask godoc
 // @Summary Create a task for a todo
 // @Description Create a new task for a specific todo
@@ -208,11 +196,6 @@ func (h *Handler) CreateTask(c *gin.Context) {
 		"message": "Task created",
 	})
 
-}
-
-type UpdateStatusTaskParams struct {
-	TodoId uint `uri:"todoId" binding:"required"`
-	TaskID uint `uri:"taskId" binding:"required"`
 }
 
 // UpdateStatusTask godoc

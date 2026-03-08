@@ -9,17 +9,17 @@ import (
 )
 
 type UserService struct {
-	repo *repository.Repository
+	repo repository.UserRepositoryI
 }
 
-func NewUserService(repo *repository.Repository) *UserService {
+func NewUserService(repo repository.UserRepositoryI) *UserService {
 	return &UserService{
 		repo: repo,
 	}
 }
 
 func (u *UserService) CreateUser(ctx context.Context, user *model.User) (bool, error) {
-	
+
 	password, err := pkg.HashPassword(user.Password)
 
 	if err != nil {
@@ -28,7 +28,7 @@ func (u *UserService) CreateUser(ctx context.Context, user *model.User) (bool, e
 
 	user.Password = password
 
-	created, err := u.repo.UserRepository.CreateUser(ctx, user)
+	created, err := u.repo.CreateUser(ctx, user)
 	if err != nil {
 		return false, err
 	}
@@ -37,7 +37,7 @@ func (u *UserService) CreateUser(ctx context.Context, user *model.User) (bool, e
 }
 
 func (u *UserService) Login(ctx context.Context, payload *model.User) (string, *model.User, error) {
-	user, err := u.repo.UserRepository.GetUserByEmail(ctx, payload.Email)
+	user, err := u.repo.GetUserByEmail(ctx, payload.Email)
 
 	if err != nil {
 		return "", nil, errors.New("invalid credentials")
@@ -59,7 +59,7 @@ func (u *UserService) Login(ctx context.Context, payload *model.User) (string, *
 }
 
 func (u *UserService) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
-	User, err := u.repo.UserRepository.GetUserByEmail(ctx, email)
+	User, err := u.repo.GetUserByEmail(ctx, email)
 
 	if err != nil {
 		return nil, err
