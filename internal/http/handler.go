@@ -3,6 +3,8 @@ package http
 import (
 	"errors"
 	"net/http"
+	"os"
+	"time"
 	"todo-list/internal/dto"
 	"todo-list/internal/model"
 	"todo-list/internal/service"
@@ -16,8 +18,19 @@ type Handler struct {
 }
 
 func newHandler() *Handler {
+	// Инициализация JWT менеджера с секретом и временем жизни (лучше брать из конфига)
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		pkg.Logger.Fatal().Msg("JWT_SECRET environment variable is not set")
+	}
+
+	jwtManager, err := pkg.NewJWTManager(secret, 24*time.Hour)
+	if err != nil {
+		pkg.Logger.Fatal().Err(err).Msg("Failed to initialize JWT Manager")
+	}
+
 	return &Handler{
-		Services: service.NewServices(),
+		Services: service.NewServices(jwtManager),
 	}
 }
 

@@ -50,7 +50,7 @@ func (r *Route) RouteRun() {
 	}
 
 	todos := router.Group("todos")
-	todos.Use(AuthMiddleware())
+	todos.Use(AuthMiddleware(r.Handler.Services.JWTManager))
 	{
 		todos.GET("/", r.Handler.ListTodos)
 		todos.POST("/create", r.Handler.CreateTodo)
@@ -59,7 +59,7 @@ func (r *Route) RouteRun() {
 	}
 
 	task := router.Group("task")
-	task.Use(AuthMiddleware())
+	task.Use(AuthMiddleware(r.Handler.Services.JWTManager))
 	{
 		task.PUT("/:todoId/:taskId", r.Handler.UpdateStatusTask)
 		task.POST("/:id", r.Handler.CreateTask)

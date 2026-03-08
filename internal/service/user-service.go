@@ -9,12 +9,14 @@ import (
 )
 
 type UserService struct {
-	repo repository.UserRepositoryI
+	repo       repository.UserRepositoryI
+	jwtManager *pkg.JWTManager
 }
 
-func NewUserService(repo repository.UserRepositoryI) *UserService {
+func NewUserService(repo repository.UserRepositoryI, jwtManager *pkg.JWTManager) *UserService {
 	return &UserService{
-		repo: repo,
+		repo:       repo,
+		jwtManager: jwtManager,
 	}
 }
 
@@ -49,7 +51,7 @@ func (u *UserService) Login(ctx context.Context, payload *model.User) (string, *
 		return "", nil, errors.New("invalid credentials")
 	}
 
-	token, err := pkg.CreateJWTToken(user)
+	token, err := u.jwtManager.CreateToken(user)
 
 	if err != nil {
 		return "", nil, err

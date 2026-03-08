@@ -72,7 +72,7 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-func AuthMiddleware() gin.HandlerFunc {
+func AuthMiddleware(jwtManager *pkg.JWTManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
 		if !strings.HasPrefix(auth, "Bearer ") {
@@ -86,7 +86,7 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		token := strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
-		jwtToken, err := pkg.ValidateJWTToken(token)
+		jwtToken, err := jwtManager.ValidateToken(token)
 		if err != nil {
 			appErr := errors.Unauthorized("Invalid or expired token")
 			pkg.Logger.Warn().
