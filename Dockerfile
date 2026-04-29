@@ -8,9 +8,7 @@ WORKDIR /app
 COPY go.mod go.sum ./
 
 # Install git, download dependencies, then remove git — всё в одном слое
-RUN apk add --no-cache git && \
-    go mod download && \
-    apk del git
+RUN go mod download
 
 # Copy source code
 COPY . .
@@ -46,11 +44,11 @@ RUN chown -R appuser:appuser /home/appuser
 USER appuser
 
 # Healthcheck
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD wget -qO- http://localhost:8181/health || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD wget -qO- http://localhost:${APP_PORT:-8085}/health || exit 1
 
-# Expose port
-EXPOSE 8181
+# Port is set via APP_PORT environment variable (default 8085)
+EXPOSE 8085
 
 # Run the application
 CMD ["./main"]

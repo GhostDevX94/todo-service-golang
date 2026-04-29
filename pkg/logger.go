@@ -10,18 +10,12 @@ import (
 
 var Logger zerolog.Logger
 
-func InitLogger() {
-	logLevel := os.Getenv("LOG_LEVEL")
-	if logLevel == "" {
-		logLevel = "info"
-	}
-
+func InitLogger(logLevel, ginMode string) {
 	level, err := zerolog.ParseLevel(logLevel)
 	if err != nil {
 		level = zerolog.InfoLevel
 	}
 
-	ginMode := os.Getenv("GIN_MODE")
 	if ginMode == "debug" || ginMode == "" {
 		output := zerolog.ConsoleWriter{
 			Out:        os.Stdout,

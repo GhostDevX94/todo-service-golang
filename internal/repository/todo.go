@@ -13,7 +13,7 @@ type TodoRepositoryI interface {
 	GetTodoById(context.Context, uint) (*model.Todo, error)
 	UpdateTodo(context.Context, *model.Todo) (*model.Todo, error)
 	DeleteTodo(context.Context, uint, uint) (bool, error)
-	ListTodos(context.Context, uint) ([]*model.Todo, error)
+	ListTodos(context.Context, uint, int, int) ([]*model.Todo, int64, error)
 }
 
 type TodoRepository struct {
@@ -78,10 +78,16 @@ func (r *TodoRepository) DeleteTodo(ctx context.Context, id uint, UserId uint) (
 	return rowsAffected > 0, nil
 }
 
-func (r *TodoRepository) ListTodos(ctx context.Context, userId uint) ([]*model.Todo, error) {
-	rows, err := r.db.QueryContext(ctx, "SELECT id, name, user_id, date, created_at, updated_at FROM todos  WHERE user_id = $1 ORDER BY created_at DESC", userId)
+func (r *TodoRepository) ListTodos(ctx context.Context, userId uint, limit, offset int) ([]*model.Todo, int64, error) {
+	var total int64
+	err := r.db.QueryRowContext(ctx, "SELECT COUNT(*) FROM todos WHERE user_id = $1", userId).Scan(&total)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
+	}
+
+	rows, err := r.db.QueryContext(ctx, "SELECT id, name, user_id, date, created_at, updated_at FROM todos WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2 OFFSET $3", userId, limit, offset)
+	if err != nil {
+		return nil, 0, err
 	}
 	defer rows.Close()
 
@@ -90,14 +96,14 @@ func (r *TodoRepository) ListTodos(ctx context.Context, userId uint) ([]*model.T
 		var todo model.Todo
 		err := rows.Scan(&todo.ID, &todo.Name, &todo.UserID, &todo.Date, &todo.CreatedAt, &todo.UpdatedAt)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		todos = append(todos, &todo)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	return todos, nil
+	return todos, total, nil
 }

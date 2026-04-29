@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"todo-list/internal/config"
 	"todo-list/internal/http"
 	"todo-list/pkg"
 
@@ -28,15 +30,28 @@ import (
 
 func main() {
 
-	pkg.InitLogger()
+	if err := godotenv.Load(); err != nil {
+		log.Println("[WARN] .env file not found, using system environment variables")
+	}
+
+	cfg, err := config.Load()
+	if err != nil {
+		panic("config error: " + err.Error())
+	}
+
+	pkg.InitLogger(cfg.Log.Level, cfg.App.GinMode)
 
 	pkg.Logger.Info().Msg("Starting Todo List API")
 
-	if err := godotenv.Load(); err != nil {
-		pkg.Logger.Warn().Err(err).Msg(".env file not found, using environment variables")
+	pkg.Logger.Info().
+		Str("dir", cfg.DB.MigrationsDir).
+		Msg("Running database migrations")
+
+	if err := pkg.RunMigrations(cfg.DB.URL, cfg.DB.MigrationsDir); err != nil {
+		pkg.Logger.Fatal().Err(err).Msg("Failed to run migrations")
 	}
 
-	route := http.NewRoute()
+	route := http.NewRoute(cfg)
 	route.RouteRun()
 
 }

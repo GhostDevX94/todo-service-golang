@@ -38,11 +38,19 @@ func (r *TaskRepository) CreateTask(ctx context.Context, request dto.CreateTaskT
 
 func (r *TaskRepository) UpdateStatusTask(ctx context.Context, data dto.UpdateStatusTaskTodoRequest, TodoId uint, TaskId uint) (bool, error) {
 
-	query := r.db.QueryRowContext(ctx, "UPDATE task_todos SET status = $1 WHERE todo_id = $2 AND id = $3;", data.Status, TodoId, TaskId)
-
-	if query.Err() != nil {
-		return false, query.Err()
+	result, err := r.db.ExecContext(ctx,
+		"UPDATE task_todos SET status = $1 WHERE todo_id = $2 AND id = $3",
+		data.Status, TodoId, TaskId,
+	)
+	if err != nil {
+		return false, err
 	}
 
-	return true, nil
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+
+	// rowsAffected == 0 означает: такой task не найден — возвращаем false
+	return rowsAffected > 0, nil
 }

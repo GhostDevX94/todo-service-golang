@@ -119,8 +119,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "400":
-          description: Bad Request
+        "401":
+          description: Unauthorized
           schema:
             additionalProperties: true
             type: object
@@ -175,13 +175,18 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
+        "201":
+          description: Created
           schema:
             additionalProperties: true
             type: object
         "400":
           description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
           schema:
             additionalProperties: true
             type: object

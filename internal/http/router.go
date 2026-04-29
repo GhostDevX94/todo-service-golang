@@ -1,8 +1,8 @@
 package http
 
 import (
-	"os"
-
+	"net/http"
+	"todo-list/internal/config"
 	_ "todo-list/docs"
 	"todo-list/pkg"
 
@@ -13,37 +13,32 @@ import (
 
 type Route struct {
 	Handler *Handler
+	cfg     *config.Config
 }
 
-func NewRoute() *Route {
+func NewRoute(cfg *config.Config) *Route {
 	return &Route{
-		Handler: newHandler(),
+		Handler: newHandler(cfg),
+		cfg:     cfg,
 	}
 }
 
 func (r *Route) RouteRun() {
-
-	ginMode := os.Getenv("GIN_MODE")
-	if ginMode == "" {
-		ginMode = "release"
-	}
-	gin.SetMode(ginMode)
+	gin.SetMode(r.cfg.App.GinMode)
 
 	router := gin.New()
 
-	port := os.Getenv("APP_PORT")
-	if port == "" {
-		port = "8080"
-	}
-
 	router.Use(RecoveryMiddleware())
-	router.Use(CORSMiddleware())
+	router.Use(CORSMiddleware(r.cfg.App.CORSOrigins))
 	router.Use(RequestLoggerMiddleware())
+
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	authGroup := router.Group("/")
-
 	{
 		authGroup.POST("/register", r.Handler.RegisterUser)
 		authGroup.POST("/login", r.Handler.LoginUser)
@@ -66,15 +61,13 @@ func (r *Route) RouteRun() {
 	}
 
 	pkg.Logger.Info().
-		Str("port", port).
-		Str("mode", ginMode).
+		Str("port", r.cfg.App.Port).
+		Str("mode", r.cfg.App.GinMode).
 		Msg("Starting server")
 
-	err := router.Run(":" + port)
-	if err != nil {
+	if err := router.Run(":" + r.cfg.App.Port); err != nil {
 		pkg.Logger.Fatal().
 			Err(err).
 			Msg("Failed to start server")
-		return
 	}
 }

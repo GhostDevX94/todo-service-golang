@@ -1,7 +1,7 @@
 package http
 
 import (
-	"os"
+	"net/http"
 	"strings"
 	"time"
 	"todo-list/internal/errors"
@@ -40,7 +40,7 @@ func RecoveryMiddleware() gin.HandlerFunc {
 					Str("path", c.Request.URL.Path).
 					Msg("Panic recovered")
 
-				c.JSON(500, gin.H{
+				c.JSON(http.StatusInternalServerError, gin.H{
 					"error":   "Internal server error",
 					"message": "An unexpected error occurred",
 				})
@@ -51,13 +51,8 @@ func RecoveryMiddleware() gin.HandlerFunc {
 	}
 }
 
-func CORSMiddleware() gin.HandlerFunc {
+func CORSMiddleware(allowedOrigins string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		allowedOrigins := os.Getenv("CORS_ALLOWED_ORIGINS")
-		if allowedOrigins == "" {
-			allowedOrigins = "*"
-		}
-
 		c.Header("Access-Control-Allow-Origin", allowedOrigins)
 		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Content-Length")

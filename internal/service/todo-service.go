@@ -12,7 +12,7 @@ type TodoServiceI interface {
 	GetTodoById(context.Context, uint) (*model.Todo, error)
 	UpdateTodo(context.Context, dto.UpdateTodoRequest, uint) (*model.Todo, error)
 	DeleteTodo(context.Context, uint, uint) (bool, error)
-	ListTodos(context.Context, uint) ([]*model.Todo, error)
+	ListTodos(context.Context, uint, int, int) ([]*model.Todo, int64, error)
 }
 
 type TodoService struct {
@@ -77,10 +77,11 @@ func (s *TodoService) DeleteTodo(ctx context.Context, id uint, UserId uint) (boo
 	return deleted, nil
 }
 
-func (s *TodoService) ListTodos(ctx context.Context, UserId uint) ([]*model.Todo, error) {
-	todos, err := s.repo.ListTodos(ctx, UserId)
+func (s *TodoService) ListTodos(ctx context.Context, UserId uint, page, limit int) ([]*model.Todo, int64, error) {
+	offset := (page - 1) * limit
+	todos, total, err := s.repo.ListTodos(ctx, UserId, limit, offset)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
-	return todos, nil
+	return todos, total, nil
 }

@@ -8,6 +8,12 @@ import (
 	"todo-list/pkg"
 )
 
+type UserServiceI interface {
+	CreateUser(ctx context.Context, user *model.User) (bool, error)
+	Login(ctx context.Context, payload *model.User) (string, *model.User, error)
+	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
+}
+
 type UserService struct {
 	repo       repository.UserRepositoryI
 	jwtManager *pkg.JWTManager

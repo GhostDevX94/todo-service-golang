@@ -3,8 +3,7 @@ package http
 import (
 	"errors"
 	"net/http"
-	"os"
-	"time"
+	"todo-list/internal/config"
 	"todo-list/internal/dto"
 	"todo-list/internal/model"
 	"todo-list/internal/service"
@@ -17,14 +16,8 @@ type Handler struct {
 	Services *service.Services
 }
 
-func newHandler() *Handler {
-	// Инициализация JWT менеджера с секретом и временем жизни (лучше брать из конфига)
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		pkg.Logger.Fatal().Msg("JWT_SECRET environment variable is not set")
-	}
-
-	jwtManager, err := pkg.NewJWTManager(secret, 24*time.Hour)
+func newHandler(cfg *config.Config) *Handler {
+	jwtManager, err := pkg.NewJWTManager(cfg.JWT.Secret, cfg.JWT.TokenDuration)
 	if err != nil {
 		pkg.Logger.Fatal().Err(err).Msg("Failed to initialize JWT Manager")
 	}
@@ -46,20 +39,17 @@ func newHandler() *Handler {
 // @Security BearerAuth
 // @Router /todos/create [post]
 func (h *Handler) CreateTodo(c *gin.Context) {
-
 	var createRequest dto.CreateTodoRequest
 
-	err := c.Bind(&createRequest)
-
-	if err != nil {
+	if err := c.Bind(&createRequest); err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
+
 	ctx := c.Request.Context()
 	createRequest.UserID = c.GetUint("uid")
 
 	todo, err := h.Services.TodoService.CreateTodo(ctx, createRequest)
-
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
@@ -124,6 +114,7 @@ func (h *Handler) DeleteTodo(c *gin.Context) {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
+
 	ctx := c.Request.Context()
 	deleted, err := h.Services.TodoService.DeleteTodo(ctx, params.ID, c.GetUint("uid"))
 	if err != nil {
@@ -146,16 +137,25 @@ func (h *Handler) DeleteTodo(c *gin.Context) {
 // @Security BearerAuth
 // @Router /todos/ [get]
 func (h *Handler) ListTodos(c *gin.Context) {
+	var pg dto.PaginationRequest
+	if err := c.ShouldBindQuery(&pg); err != nil {
+		pkg.ErrorResponse(c, err, http.StatusBadRequest)
+		return
+	}
+
 	ctx := c.Request.Context()
-	todos, err := h.Services.TodoService.ListTodos(ctx, c.GetUint("uid"))
+	todos, total, err := h.Services.TodoService.ListTodos(ctx, c.GetUint("uid"), pg.Page, pg.Limit)
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"todos": todos,
-		"count": len(todos),
+	c.JSON(http.StatusOK, dto.PaginatedResponse{
+		Success: true,
+		Data:    todos,
+		Page:    pg.Page,
+		PerPage: pg.Limit,
+		Total:   total,
 	})
 }
 
@@ -167,8 +167,9 @@ func (h *Handler) ListTodos(c *gin.Context) {
 // @Produce json
 // @Param id path int true "Todo ID"
 // @Param task body dto.CreateTaskTodoRequest true "Task data"
-// @Success 200 {object} map[string]interface{}
+// @Success 201 {object} map[string]interface{}
 // @Failure 400 {object} map[string]interface{}
+// @Failure 404 {object} map[string]interface{}
 // @Security BearerAuth
 // @Router /task/{id} [post]
 func (h *Handler) CreateTask(c *gin.Context) {
@@ -178,6 +179,7 @@ func (h *Handler) CreateTask(c *gin.Context) {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
+
 	ctx := c.Request.Context()
 	todo, err := h.Services.TodoService.GetTodoById(ctx, params.ID)
 	if err != nil {
@@ -186,16 +188,14 @@ func (h *Handler) CreateTask(c *gin.Context) {
 	}
 
 	if todo == nil {
-		pkg.ErrorResponse(c, errors.New("not found"), http.StatusNotFound)
+		pkg.ErrorResponse(c, errors.New("todo not found"), http.StatusNotFound)
 		return
 	}
 
 	var data dto.CreateTaskTodoRequest
 
-	err = c.Bind(&data)
-
-	if err != nil {
-		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
+	if err = c.Bind(&data); err != nil {
+		pkg.ErrorResponse(c, err, http.StatusBadRequest) // исправлено: 400, не 500
 		return
 	}
 
@@ -205,10 +205,9 @@ func (h *Handler) CreateTask(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "Task created",
 	})
-
 }
 
 // UpdateStatusTask godoc
@@ -225,25 +224,24 @@ func (h *Handler) CreateTask(c *gin.Context) {
 // @Security BearerAuth
 // @Router /task/{todoId}/{taskId} [put]
 func (h *Handler) UpdateStatusTask(c *gin.Context) {
+	var params UpdateStatusTaskParams
+
+	if err := c.ShouldBindUri(&params); err != nil {
+		pkg.ErrorResponse(c, err, http.StatusBadRequest) // исправлено: BindUri до Bind тела
+		return
+	}
 
 	var data dto.UpdateStatusTaskTodoRequest
 
-	err := c.Bind(&data)
-	if err != nil {
-		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
+	if err := c.Bind(&data); err != nil {
+		pkg.ErrorResponse(c, err, http.StatusBadRequest) // исправлено: 400, не 500
 		return
 	}
-	var params UpdateStatusTaskParams
 
-	err = c.ShouldBindUri(&params)
-	if err != nil {
-		pkg.ErrorResponse(c, err, http.StatusInternalServerError)
-		return
-	}
 	ctx := c.Request.Context()
-	_, err = h.Services.TodoService.GetTodoById(ctx, params.TodoId)
+	_, err := h.Services.TodoService.GetTodoById(ctx, params.TodoId)
 	if err != nil {
-		pkg.ErrorResponse(c, errors.New("not found"), http.StatusNotFound)
+		pkg.ErrorResponse(c, errors.New("todo not found"), http.StatusNotFound)
 		return
 	}
 
@@ -256,7 +254,6 @@ func (h *Handler) UpdateStatusTask(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": updated,
 	})
-
 }
 
 // RegisterUser godoc
@@ -270,11 +267,9 @@ func (h *Handler) UpdateStatusTask(c *gin.Context) {
 // @Failure 400 {object} map[string]interface{}
 // @Router /register [post]
 func (h *Handler) RegisterUser(c *gin.Context) {
-
 	var request dto.RegisterUser
-	err := c.Bind(&request)
 
-	if err != nil {
+	if err := c.Bind(&request); err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
@@ -284,21 +279,20 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 		Email:    request.Email,
 		Password: request.Password,
 	}
+
 	ctx := c.Request.Context()
 	created, err := h.Services.UserService.CreateUser(ctx, user)
-
 	if err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
 	if !created {
-		pkg.ErrorResponse(c, errors.New("user already exists"), http.StatusBadRequest)
+		pkg.ErrorResponse(c, errors.New("user already exists"), http.StatusConflict) // 409, не 400
 		return
 	}
 
 	pkg.CreatedResponse(c, "User created")
-
 }
 
 // LoginUser godoc
@@ -309,30 +303,27 @@ func (h *Handler) RegisterUser(c *gin.Context) {
 // @Produce json
 // @Param credentials body dto.LoginUser true "Login credentials"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} map[string]interface{}
+// @Failure 401 {object} map[string]interface{}
 // @Router /login [post]
 func (h *Handler) LoginUser(c *gin.Context) {
 	var request dto.LoginUser
 
-	err := c.Bind(&request)
-	ctx := c.Request.Context()
-	if err != nil {
+	if err := c.Bind(&request); err != nil {
 		pkg.ErrorResponse(c, err, http.StatusBadRequest)
 		return
 	}
 
+	ctx := c.Request.Context()
 	payload := &model.User{
 		Email:    request.Email,
 		Password: request.Password,
 	}
 
 	token, user, err := h.Services.UserService.Login(ctx, payload)
-
 	if err != nil {
-		pkg.ErrorResponse(c, err, http.StatusNotFound)
+		pkg.ErrorResponse(c, err, http.StatusUnauthorized) // исправлено: 401, не 404
 		return
 	}
 
 	pkg.TokenResponse(c, user, token)
-
 }

@@ -28,3 +28,8 @@ type LoginUser struct {
 	Email    string `json:"email" binding:"required,email" example:"john@example.com"`
 	Password string `json:"password" binding:"required,min=6" example:"securePassword123"`
 }
+
+type PaginationRequest struct {
+	Page  int `form:"page,default=1" binding:"omitempty,min=1"`
+	Limit int `form:"limit,default=10" binding:"omitempty,min=1,max=100"`
+}
